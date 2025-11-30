@@ -1,18 +1,66 @@
+document.addEventListener("DOMContentLoaded", function () {
+  const counters = document.querySelectorAll(".count");
 
-    const counters = document.querySelectorAll('.count');
+  function animateCounter(counter) {
+    const target = Number(counter.getAttribute("data-target")) || 0;
+    const duration = 1200; 
+    const start = 0;
+    const startTime = performance.now();
 
-    function animateCounter(counter) {
-      const target = +counter.getAttribute('data-target');
-      const speed = 250; // higher = slower
-      const current = +counter.innerText;
-      const increment = Math.max(1, Math.floor(target / speed));
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1); 
+      const value = Math.floor(start + (target - start) * progress);
+      counter.textContent = value;
 
-      if (current < target) {
-        counter.innerText = current + increment;
-        requestAnimationFrame(() => animateCounter(counter));
+      if (progress < 1) {
+        requestAnimationFrame(update);
       } else {
-        counter.innerText = target;
+        counter.textContent = target; 
       }
     }
 
-    counters.forEach(counter => animateCounter(counter));
+    requestAnimationFrame(update);
+  }
+
+  const counterObserver = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const counter = entry.target;
+          if (!counter.dataset.animated) {
+            counter.dataset.animated = "true"; 
+            animateCounter(counter);
+          }
+          obs.unobserve(counter);
+        }
+      });
+    },
+    {
+      threshold: 0.4 
+    }
+  );
+
+  counters.forEach((c) => {
+    c.textContent = "0";
+    counterObserver.observe(c);
+  });
+
+  const revealEls = document.querySelectorAll(".reveal-on-scroll");
+
+  const revealObserver = new IntersectionObserver(
+    (entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          obs.unobserve(entry.target);
+        }
+      });
+    },
+    {
+      threshold: 0.15
+    }
+  );
+
+  revealEls.forEach((el) => revealObserver.observe(el));
+});
